@@ -11,5 +11,5 @@ output "nodes_public_ip" {
 }
 
 output "kubectl_config" {
-  value = "${terraform.workspace}.conf"
+  value = "${path.root}/${terraform.workspace}.conf"
 }

@@ -11,22 +11,26 @@ resource "scaleway_server" "k8s_master" {
   security_group = "${scaleway_security_group.master_security_group.id}"
 
   connection {
-    type        = "ssh"
-    user        = "root"
-    agent       = true
+    type  = "ssh"
+    user  = "root"
+    agent = true
   }
+
   provisioner "file" {
-    source      = "scripts/"
+    source      = "${path.module}/scripts/"
     destination = "/tmp"
   }
+
   provisioner "file" {
-    source      = "addons/"
+    source      = "${path.module}/addons/"
     destination = "/tmp"
   }
+
   provisioner "file" {
-    source      = "kubeadm"
+    source      = "${path.module}/kubeadm"
     destination = "/tmp/"
   }
+
   provisioner "remote-exec" {
     inline = [
       <<EOT
@@ -90,20 +94,22 @@ kubectl create secret -n kube-system generic weave-passwd --from-literal=weave-p
 kubectl apply -f "https://cloud.weave.works/k8s/net?password-secret=weave-passwd&k8s-version=$(kubectl version | base64 | tr -d '\n')" && \
 chmod +x /tmp/monitoring-install.sh && /tmp/monitoring-install.sh ${var.arch}
 EOT
+      ,
     ]
   }
+
   provisioner "local-exec" {
-    command    = "./scripts/kubectl-conf.sh ${terraform.workspace} ${self.public_ip} ${self.private_ip} ${var.private_key}"
+    command    = "${path.module}/scripts/kubectl-conf.sh '${path.root}/${terraform.workspace}' ${self.public_ip} ${self.private_ip} ${var.private_key}"
     on_failure = "continue"
   }
 }
 
 data "external" "kubeadm_join" {
-  program = ["./scripts/kubeadm-token.sh"]
+  program = ["${path.module}/scripts/kubeadm-token.sh"]
 
   query = {
     host = "${scaleway_ip.k8s_master_ip.0.ip}"
-    key = "${var.private_key}"
+    key  = "${var.private_key}"
   }
 
   depends_on = ["scaleway_server.k8s_master"]

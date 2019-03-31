@@ -11,18 +11,21 @@ resource "scaleway_server" "k8s_node" {
   security_group = "${scaleway_security_group.node_security_group.id}"
 
   connection {
-    type        = "ssh"
-    user        = "root"
-    agent       = true
+    type  = "ssh"
+    user  = "root"
+    agent = true
   }
+
   provisioner "file" {
-    source      = "scripts/docker-install.sh"
+    source      = "${path.module}/scripts/docker-install.sh"
     destination = "/tmp/docker-install.sh"
   }
+
   provisioner "file" {
-    source      = "scripts/kubeadm-install.sh"
+    source      = "${path.module}/scripts/kubeadm-install.sh"
     destination = "/tmp/kubeadm-install.sh"
   }
+
   provisioner "remote-exec" {
     inline = [
       "set -e",
@@ -33,6 +36,7 @@ resource "scaleway_server" "k8s_node" {
       "${data.external.kubeadm_join.result.command}",
     ]
   }
+
   provisioner "remote-exec" {
     inline = [
       "kubectl get pods --all-namespaces",
